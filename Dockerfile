@@ -1,11 +1,29 @@
-FROM node:alpine
+# Stage 1: Build the Angular application
+FROM node:20-alpine
 
-WORKDIR /usr/src/app
+# Set the working directory inside the container
+WORKDIR /app
 
-COPY . /usr/src/app
+# Copy package.json and package-lock.json for dependency installation
+COPY package*.json ./
 
-RUN npm install -g @angular/cli
+# Install Angular dependencies
+RUN npm install
 
-RUN npm install --legacy-peer-deps
+# Copy the application code into the container
+COPY . .
 
-CMD ["ng", "serve", "--host", "0.0.0.0"]
+# Build the Angular app
+RUN npm run build --prod
+
+# Stage 2: Serve the application with Nginx
+FROM nginx:alpine
+
+# Copy the build output from the build stage
+COPY --from=0 /app/dist/test/browser /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
